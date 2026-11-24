@@ -1,0 +1,52 @@
+# ---------- 依赖 ----------
+node_modules/
+.pnpm-store/
+
+# ---------- 前端构建产物 ----------
+dist/
+dist-ssr/
+dist-app/
+*.local
+
+# ---------- Rust / Tauri 构建产物 ----------
+src-tauri/target/
+src-tauri/binaries/
+target/
+
+# ---------- Go 构建产物 ----------
+backend-go/*.exe
+backend-go/*.test
+*.test.exe
+
+# ---------- 运行时数据（应用运行期落盘，不入库）----------
+data/
+*.log
+npm-debug.log*
+
+# ---------- 缓存与临时 ----------
+*.tsbuildinfo
+.vite/
+.vite-temp/
+.vitest-cache/
+.cache/
+
+# ---------- 环境变量与凭据 ----------
+.env
+.env.*
+!.env.example
+
+# ---------- 编辑器与系统 ----------
+.vs/
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*.suo
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ---------- 临时工作区 ----------
+.tmp/
+.worktrees/
