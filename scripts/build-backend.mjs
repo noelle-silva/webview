@@ -9,7 +9,10 @@ const appDir = path.resolve(__dirname, '..')
 const backendDir = path.join(appDir, 'backend-go')
 const tauriDir = path.join(appDir, 'src-tauri')
 const binariesDir = path.join(tauriDir, 'binaries')
-const debugDir = path.join(tauriDir, 'target', 'debug')
+const targetDir = process.env.CARGO_TARGET_DIR
+  ? path.resolve(process.env.CARGO_TARGET_DIR)
+  : path.join(tauriDir, 'target')
+const debugDir = path.join(targetDir, 'debug')
 
 function run(command, args, options = {}) {
   return new Promise((resolve, reject) => {

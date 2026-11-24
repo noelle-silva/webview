@@ -11,5 +11,9 @@ async function copyAssets(target) {
   await fs.cp(path.join(appDir, 'assets'), path.join(target, 'assets'), { recursive: true })
 }
 
-await copyAssets(path.join(appDir, 'src-tauri', 'target', 'debug'))
-await copyAssets(path.join(appDir, 'src-tauri', 'target', 'resources'))
+const targetDir = process.env.CARGO_TARGET_DIR
+  ? path.resolve(process.env.CARGO_TARGET_DIR)
+  : path.join(appDir, 'src-tauri', 'target')
+
+await copyAssets(path.join(targetDir, 'debug'))
+await copyAssets(path.join(targetDir, 'resources'))
