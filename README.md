@@ -51,23 +51,23 @@ Go sidecar 骨架仍由模板机制接管（`settings.json`、`_meta.json`、`_m
 ## 开发命令
 
 ```powershell
-pnpm --dir apps/webview build:backend
-pnpm --dir apps/webview test:ui
-pnpm --dir apps/webview apps:version:check
-pnpm --dir apps/webview apps:bump:dry
+npm --prefix apps/webview run build:backend
+npm --prefix apps/webview run test:ui
+npm --prefix apps/webview run apps:version:check
+npm --prefix apps/webview run apps:bump:dry
 go test ./...   # 需在 apps/webview/backend-go 目录执行
-pnpm --dir apps/webview exec tsc --noEmit
+npm --prefix apps/webview exec -- tsc --noEmit
 cargo check --manifest-path apps/webview/src-tauri/Cargo.toml
 cargo test --manifest-path apps/webview/src-tauri/Cargo.toml
-pnpm --dir apps/webview exec vite build
-pnpm --dir apps/webview build:exe:dev
+npm --prefix apps/webview exec -- vite build
+npm --prefix apps/webview run build:exe:dev
 ```
 
 ## 构建命令
 
 ```powershell
-pnpm --dir apps/webview build:app:dev
-pnpm --dir apps/webview build:app
+npm --prefix apps/webview run build:app:dev
+npm --prefix apps/webview run build:app
 ```
 
 `build:app:dev` 用于生成本地开发版应用容器（`apps/webview/dist-app/v5-windows-dev/`），`build:app` 用于生成本地正式版容器（`apps/webview/dist-app/v5-windows/`）。
