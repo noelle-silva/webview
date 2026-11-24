@@ -4,7 +4,7 @@ import fsp from 'node:fs/promises'
 import http from 'node:http'
 import path from 'node:path'
 import process from 'node:process'
-import { execFileSync, spawn } from 'node:child_process'
+import { execFileSync, spawn, spawnSync } from 'node:child_process'
 
 const SUFFIX_RE = /^[A-Za-z0-9][A-Za-z0-9._-]*$/
 
@@ -89,6 +89,40 @@ function cleanTauriEnv(baseEnv) {
   return env
 }
 
+
+function findSccacheBin(currentPath) {
+  const exeName = process.platform === 'win32' ? 'sccache.exe' : 'sccache'
+  const sep = process.platform === 'win32' ? ';' : ':'
+  for (const dir of String(currentPath || '').split(sep).map(s => s.trim()).filter(Boolean)) {
+    const candidate = path.join(dir, exeName)
+    if (fs.existsSync(candidate)) return candidate
+  }
+  return ''
+}
+
+function spaceSccachePort(depsStore) {
+  const hash = crypto.createHash('sha256').update(path.resolve(depsStore).toLowerCase()).digest()
+  const num = hash.readUInt16BE(0)
+  return 42300 + (num % 10000)
+}
+
+function configureSpaceSccache(env, depsStore) {
+  const bin = findSccacheBin(env.PATH || env.Path)
+  if (!bin) return
+  const cacheDir = path.join(depsStore, 'sccache')
+  fs.mkdirSync(cacheDir, { recursive: true })
+  env.RUSTC_WRAPPER = bin
+  env.SCCACHE_DIR = cacheDir
+  env.SCCACHE_SERVER_PORT = String(spaceSccachePort(depsStore))
+  env.SCCACHE_IDLE_TIMEOUT = '180'
+  env.CARGO_INCREMENTAL = '0'
+  try {
+    spawnSync(bin, ['--start-server'], { env, stdio: 'ignore' })
+  } catch {
+    // ignore start errors; sccache client will retry or fail cleanly
+  }
+}
+
 function toolchainEnv(depsStore, cargoTargetDir) {
   const env = cleanTauriEnv(process.env)
   env.npm_config_cache = path.join(depsStore, 'npm')
@@ -97,6 +131,7 @@ function toolchainEnv(depsStore, cargoTargetDir) {
   env.CARGO_HOME = path.join(depsStore, 'cargo')
   if (cargoTargetDir) {
     env.CARGO_TARGET_DIR = cargoTargetDir
+    configureSpaceSccache(env, depsStore)
   }
   return env
 }
@@ -497,7 +532,7 @@ async function cmdTest() {
   }
   const backendRsManifest = path.join(worktree, 'backend-rs', 'Cargo.toml')
   if (fs.existsSync(backendRsManifest)) {
-    await spawnCmd('cargo', ['test', '--manifest-path', backendRsManifest], { cwd: worktree, env })
+    await spawnCmd('cargo', ['test', '--release', '--manifest-path', backendRsManifest], { cwd: worktree, env })
   }
 
   // 4. Rust 壳单元测试（为 tauri::generate_context! 临时提供 dist 与 externalBin，结束后立即清理）
@@ -519,7 +554,7 @@ async function cmdTest() {
         await fsp.writeFile(dst, '')
       }
     }
-    await spawnCmd('cargo', ['test', '--manifest-path', path.join('src-tauri', 'Cargo.toml')], {
+    await spawnCmd('cargo', ['test', '--release', '--manifest-path', path.join('src-tauri', 'Cargo.toml')], {
       cwd: worktree,
       env,
     })
