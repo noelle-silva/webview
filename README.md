@@ -2,7 +2,7 @@
 
 webview 是 Fast Window v5 应用体系中的**独立收藏桌面与浏览 App**：把网址收藏以桌面图标的形式管理（分组、收纳夹、壁纸、图标外观），点击图标以内嵌「浏览栈」打开网页，并内置网页视频倍速能力。
 
-桌面界面移植自 `apps/folders`（收藏集）的整套桌面体验，但只保留**网址**一类收藏；数据由 webview 自己的 Rust 壳命令管理，不依赖 folders 的 Go 后端与其数据文件体系。
+桌面界面采用收藏集桌面体验，但只保留**网址**一类收藏；数据由 webview 自己的 Rust 壳命令管理，独立运行。
 
 ## 功能
 
@@ -51,26 +51,26 @@ Go sidecar 骨架仍由模板机制接管（`settings.json`、`_meta.json`、`_m
 ## 开发命令
 
 ```powershell
-npm --prefix apps/webview run build:backend
-npm --prefix apps/webview run test:ui
-npm --prefix apps/webview run apps:version:check
-npm --prefix apps/webview run apps:bump:dry
-go test ./...   # 需在 apps/webview/backend-go 目录执行
-npm --prefix apps/webview exec -- tsc --noEmit
-cargo check --manifest-path apps/webview/src-tauri/Cargo.toml
-cargo test --manifest-path apps/webview/src-tauri/Cargo.toml
-npm --prefix apps/webview exec -- vite build
-npm --prefix apps/webview run build:exe:dev
+npm run build:backend
+npm run test:ui
+npm run apps:version:check
+npm run apps:bump:dry
+go test ./...   # 需在 backend-go 目录执行
+npm exec -- tsc --noEmit
+cargo check --manifest-path src-tauri/Cargo.toml
+cargo test --manifest-path src-tauri/Cargo.toml
+npm exec -- vite build
+npm run build:exe:dev
 ```
 
 ## 构建命令
 
 ```powershell
-npm --prefix apps/webview run build:app:dev
-npm --prefix apps/webview run build:app
+npm run build:app:dev
+npm run build:app
 ```
 
-`build:app:dev` 用于生成本地开发版应用容器（`apps/webview/dist-app/v5-windows-dev/`），`build:app` 用于生成本地正式版容器（`apps/webview/dist-app/v5-windows/`）。
+`build:app:dev` 用于生成本地开发版应用容器（`dist-app/v5-windows-dev/`），`build:app` 用于生成本地正式版容器（`dist-app/v5-windows/`）。
 
 ## 手工验收清单
 
@@ -105,10 +105,9 @@ npm --prefix apps/webview run build:app
 - FW 启动行为（show/hide/toggle/close、bounds 上报）与 v5 模板一致。
 - 重复启动转发到已有实例；dev/release 互不串实例。
 
-## 与模板的关系
+## 架构组成
 
-- 派生自 `apps/v5-reference-app-go`（v5 Go sidecar 模板），模板壳模块（single_instance / fw_window / control_server / standalone_tray / data_dir / shutdown / backend_lifecycle / backend_sidecar）保留，仅做身份替换。
+- 桌面壳（Go sidecar + Tauri 壳架构），模块（single_instance / fw_window / control_server / standalone_tray / data_dir / shutdown / backend_lifecycle / backend_sidecar）独立维护。
 - 业务数据层：`src-tauri/src/collections/`（模型与校验、文档读写、旧书签迁移、资产导入、网页图标发现、业务方法与统一命令）。
-- 前端桌面界面：`src/collections/`（从 `apps/folders` 移植并按网址单类精简；数据通道改为 Tauri invoke + 资产经 asset protocol 呈现）。
+- 前端桌面界面：`src/collections/`（网址单类收藏桌面；数据通道使用 Tauri invoke，资产经 asset protocol 呈现）。
 - 浏览栈扩展为多页面：`browser_stack.rs`（顶部栏 + `browser-<n>` 页面窗口集合与当前页指针）/ `browser_commands.rs`（打开、切换、单页关闭、往返、面板高度等命令）/ `BrowserBarApp.tsx`（页面切换下拉与窗口按钮）；点条目打开新页面由 `collections.items.open` 承接（带条目名称与图标）。
-- 宿主（`src/`、`src-tauri/`）与插件（`plugins/web-view/`）零改动。
